@@ -52,9 +52,10 @@ def run_check_coe():
     telegram_chat_ids_raw = config['telegram']['chat_ids'].split(',')
     uniq_telegram_chat_ids = [[x for i, x in enumerate(telegram_chat_ids_raw) if x not in telegram_chat_ids_raw[:i]]]
     date = datetime.now().strftime("%d.%m.%Y")
-    city = "Чернівці"
-    street = ""
-    date = "20.02.2024"
+    city = config['tasks']['city']
+    street = config['tasks']['street']
+    if config['tasks']['date']:
+        date = config['tasks']['date']
     coe = check_coe(street=street, city=city, date=date)
     # Path to the file where the last check results are stored
 

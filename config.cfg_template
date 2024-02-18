@@ -5,3 +5,8 @@ chat_ids = 354352119,1111111111
 
 [celery]
 scan_interval = 60
+
+[tasks]
+street = "Лесина"
+сity = "Чернівці"
+date = "20.02.2024"
