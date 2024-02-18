@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   redis:
+    restart: unless-stopped
     image: redis:latest
     ports:
       - "6379:6379"
@@ -14,6 +15,7 @@ services:
 
   celery_worker:
     build: .
+    restart: unless-stopped
     command: celery -A celery_app worker --loglevel=info
     volumes:
       - .:/code
@@ -24,6 +26,7 @@ services:
 
   celery_beat:
     build: .
+    restart: unless-stopped
     command: celery -A celery_app beat --loglevel=info
     volumes:
       - .:/code
