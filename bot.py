@@ -1,3 +1,5 @@
+import copy
+
 from celery_app import app
 from modules.scrappers import ChernivtsiOblEnergo
 from modules.serializers import html_table_to_dict, TelegramChernivtsiOblEnergo
@@ -7,6 +9,7 @@ import json
 import configparser
 from pathlib import Path
 
+last_results = None
 
 def check_coe(street, city, date, *args, **kwargs):
     street = street
@@ -42,6 +45,7 @@ def check_coe(street, city, date, *args, **kwargs):
 
 @app.task
 def run_check_coe():
+    global last_results
     config = configparser.ConfigParser()
     config.read('config.cfg')
     telegram_api_key = config['telegram']['api_key']
@@ -49,20 +53,16 @@ def run_check_coe():
     uniq_telegram_chat_ids = [[x for i, x in enumerate(telegram_chat_ids_raw) if x not in telegram_chat_ids_raw[:i]]]
     date = datetime.now().strftime("%d.%m.%Y")
     city = "Чернівці"
-    street = "Лесина"
+    street = ""
+    date = "20.02.2024"
     coe = check_coe(street=street, city=city, date=date)
     # Path to the file where the last check results are stored
-    results_file = Path('last_coe_results.json')
 
-    # Load last results if the file exists
-    if results_file.exists():
-        with open(results_file, 'r') as f:
-            last_results = json.load(f)
-    else:
-        last_results = {}
-
+    print(f"COMPARE: coe {coe} \n\n last_results {last_results}")
     # Compare current results with last results
     if coe != last_results:
+        last_results = copy.deepcopy(coe)
+
         if config['telegram']['enabled']:
             serialized_notification_obj = TelegramChernivtsiOblEnergo()
             for chat_id in uniq_telegram_chat_ids[0]:
@@ -78,6 +78,3 @@ def run_check_coe():
             print(f"{date}: {city} {street} Number of emergency shutdowns: {len(coe['emergency'])}, "
                   f"number of planned shutdowns: {len(coe['planned'])}")
 
-    # Save current results as last results for next check
-    with open(results_file, 'w') as f:
-        json.dump(coe, f)
