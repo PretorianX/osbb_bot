@@ -5,6 +5,7 @@ from modules.notifications import TelegramNotificationChannel
 from datetime import datetime
 import json
 import configparser
+from pathlib import Path
 
 
 def check_coe(street, city, date, *args, **kwargs):
@@ -50,17 +51,33 @@ def run_check_coe():
     city = "Чернівці"
     street = "Лесина"
     coe = check_coe(street=street, city=city, date=date)
-    if config['telegram']['enabled']:
-        serialized_notification_obj = TelegramChernivtsiOblEnergo()
-        for chat_id in uniq_telegram_chat_ids[0]:
-            telegram = TelegramNotificationChannel(telegram_api_key, chat_id)
-            if coe['emergency']:
-                for shutdown in coe['emergency']:
-                    shutdown.append("emergency")
-                    telegram.send_notification(serialized_notification_obj.serialize(shutdown))
-            if coe['planned']:
-                for shutdown in coe['planned']:
-                    shutdown.append("planned")
-                    telegram.send_notification(serialized_notification_obj.serialize(shutdown))
-        print(f"{date}: {city} {street} Number of emergency shutdowns: {len(coe['emergency'])}, "
-              f"number of planned shutdowns: {len(coe['planned'])}")
+    # Path to the file where the last check results are stored
+    results_file = Path('last_coe_results.json')
+
+    # Load last results if the file exists
+    if results_file.exists():
+        with open(results_file, 'r') as f:
+            last_results = json.load(f)
+    else:
+        last_results = {}
+
+    # Compare current results with last results
+    if coe != last_results:
+        if config['telegram']['enabled']:
+            serialized_notification_obj = TelegramChernivtsiOblEnergo()
+            for chat_id in uniq_telegram_chat_ids[0]:
+                telegram = TelegramNotificationChannel(telegram_api_key, chat_id)
+                if coe['emergency']:
+                    for shutdown in coe['emergency']:
+                        shutdown.append("emergency")
+                        telegram.send_notification(serialized_notification_obj.serialize(shutdown))
+                if coe['planned']:
+                    for shutdown in coe['planned']:
+                        shutdown.append("planned")
+                        telegram.send_notification(serialized_notification_obj.serialize(shutdown))
+            print(f"{date}: {city} {street} Number of emergency shutdowns: {len(coe['emergency'])}, "
+                  f"number of planned shutdowns: {len(coe['planned'])}")
+
+    # Save current results as last results for next check
+    with open(results_file, 'w') as f:
+        json.dump(coe, f)
