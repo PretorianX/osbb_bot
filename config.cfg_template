@@ -1,0 +1,7 @@
+[telegram]
+enabled = 1
+api_key = key
+chat_ids = 354352119,1111111111
+
+[celery]
+scan_interval = 60

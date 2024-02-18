@@ -1,8 +1,10 @@
+from celery_app import app
 from modules.scrappers import ChernivtsiOblEnergo
 from modules.serializers import html_table_to_dict, TelegramChernivtsiOblEnergo
 from modules.notifications import TelegramNotificationChannel
 from datetime import datetime
 import json
+import configparser
 
 
 def check_coe(street, city, date, *args, **kwargs):
@@ -37,16 +39,17 @@ def check_coe(street, city, date, *args, **kwargs):
     return coe_shutdowns
 
 
-if __name__ == "__main__":
-    import configparser
+@app.task
+def run_check_coe():
     config = configparser.ConfigParser()
     config.read('config.cfg')
     telegram_api_key = config['telegram']['api_key']
     telegram_chat_ids_raw = config['telegram']['chat_ids'].split(',')
     uniq_telegram_chat_ids = [[x for i, x in enumerate(telegram_chat_ids_raw) if x not in telegram_chat_ids_raw[:i]]]
     date = datetime.now().strftime("%d.%m.%Y")
-    date = '20.02.2024'     # debug mode
-    coe = check_coe(street="", city="Чернівці", date=date)
+    city = "Чернівці"
+    street = "Лесина"
+    coe = check_coe(street=street, city=city, date=date)
     if config['telegram']['enabled']:
         serialized_notification_obj = TelegramChernivtsiOblEnergo()
         for chat_id in uniq_telegram_chat_ids[0]:
@@ -59,6 +62,5 @@ if __name__ == "__main__":
                 for shutdown in coe['planned']:
                     shutdown.append("planned")
                     telegram.send_notification(serialized_notification_obj.serialize(shutdown))
-                    break
-        print(f"{date}: Number of emergency shutdowns: {len(coe['emergency'])}, "
+        print(f"{date}: {city} {street} Number of emergency shutdowns: {len(coe['emergency'])}, "
               f"number of planned shutdowns: {len(coe['planned'])}")

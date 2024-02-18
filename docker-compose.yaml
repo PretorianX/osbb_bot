@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - osbb_network
+    command: redis-server --appendonly yes
+
+
+  celery_worker:
+    build: .
+    command: celery -A celery_app worker --loglevel=info
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
+    networks:
+      - osbb_network
+
+  celery_beat:
+    build: .
+    command: celery -A celery_app beat --loglevel=info
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
+    networks:
+        - osbb_network
+
+networks:
+  osbb_network:
+    driver: bridge
+
+
