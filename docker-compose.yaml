@@ -19,6 +19,7 @@ services:
     command: celery -A celery_app worker --loglevel=info
     volumes:
       - .:/code
+      - ./config.cfg:/code/config.cfg
     depends_on:
       - redis
     networks:
@@ -30,6 +31,7 @@ services:
     command: celery -A celery_app beat --loglevel=info
     volumes:
       - .:/code
+      - ./config.cfg:/code/config.cfg
     depends_on:
       - redis
     networks:

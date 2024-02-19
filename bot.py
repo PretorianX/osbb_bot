@@ -59,7 +59,7 @@ def run_check_coe():
     coe = check_coe(street=street, city=city, date=date)
     # Path to the file where the last check results are stored
 
-    print(f"COMPARE: coe {coe} \n\n last_results {last_results}")
+    print(f"{date} {city} {street} COMPARE: coe {coe} \n\n last_results {last_results}")
     # Compare current results with last results
     if coe != last_results:
         last_results = copy.deepcopy(coe)
